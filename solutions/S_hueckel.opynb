@@ -1,0 +1,1028 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "ex1_hueckel_solution.ipynb",
+      "provenance": [],
+      "collapsed_sections": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "afFVibA3R49m",
+        "colab_type": "text"
+      },
+      "source": [
+        "**1) Hückel Molecular Orbitals**\n",
+        "\n",
+        "Before getting started with this exercise, please make sure that you are familiar with the concept of determinants and eigenvalue theory. Have another look into the lecture - if necessary.\n",
+        "\n",
+        "**Introduction**\n",
+        "\n",
+        "The Hückel method was introduced in 1930 and it relies on linear combination of atomic orbitals (**LCAO**) to determine the energies of molecular orbitals. It is primarily used for conjugated $\\pi$-electron systems, since the Hückel method is most successful for planar molecules, where the $\\pi$-electrons are separable from the $\\sigma$-electrons since the orbitals are orthogonal (as an approximation which is never true in reality). The method is remarkably simple and gave qualitatively correct results at a time when treating a many electron system with a computer as we do today in modern quantum chemistry was not possible -- using only pen and paper. The main mathematical ingredient to Molecular Orbital theory is linear algebra and Eigenvalue theory. While the quantum methods that are being used in modern research such as density functional theoery (DFT), Møller–Plesset perturbation theory (MP) or coupled cluster are much more advanced and also more general than Hueckel they nevertheless use the same mathematical methods of linear algebra.\n",
+        "\n",
+        "\n",
+        "**Eigenvectors and Eigenvectors**\n",
+        "\n",
+        "The Hückel method is based on **LCAO** which ultimately is justified by the linear nature of quantum mechanics and of the Schrödinger equation.\n",
+        "We restrict to p-orbitals which shall span a complete basis of our Hilbert Space:\n",
+        "\n",
+        "> (1) $\\Psi = \\sum_i c_i \\phi_i$\n",
+        "\n",
+        "where $\\Psi$ is a molecular orbital, $\\phi_i$ are atomic p-orbitals, and $c_i$ are basis coefficients. It is very important to understand the concept of a basis. A basis is the minimal **AND** also the maximal set of state vectors $\\phi_i$ that can be used to construct **ANY** other state as a linear combination of the $\\phi_i$ vectors. We will see later on that the most natural choice of a basis is often the eigenvectors of the Hamilton operator. Furthermore in quantum mechanics one usually choses a maximal set of mutually commuting operators and then computes the eigenvectors of these operators. States constructed by a combination of these eigenvectors are eigenfunctions of **BOTH** operators. You may for example think about the total angular momentum operator and the Hamiltonian of the Hydrogen atom. In particular, a p-orbital is an eigenvector of the Hamiltonian **AND** of the total angular momentum operator with eigenvalue $\\sqrt{2} h$. Using the variational principle (a.k.a. Ritz method) it can be shown that the following relation holds,\n",
+        "\n",
+        "> (2) $(\\mathbf{H} - E \\cdot \\mathbf{S}) \\cdot \\mathbf{C} = 0$,\n",
+        "\n",
+        "where $\\mathbf{H}$ is the Hamilton operator, with elements $\\mathbf{H}_{ij} =  \\langle \\phi_i \\vert \\mathbf{H} \\vert \\phi_j \\rangle$ which forms an $M \\times M$ matrix with $M$ being the number of atomic orbitals considered, and $\\mathbf{H} = (\\mathbf{H}^T)^{*}$ so it is hermitian meaning eigenvalues are real and eigenvectors that belong to distinct eigenvalues are orthogonal. \n",
+        "$\\mathbf{S}$ is the overlap matrix with elements $\\mathbf{S}_{ij}= \\langle \\phi_i \\vert \\phi_j \\rangle $ and finally $\\mathbf{C}$ is a column vector with coefficients $\\mathbf{C} = (c_{1}, c_{2}, \\dots, c_M)^T$. From linear algebra we know that Eq. (2) can only have a non-trivial solution if:\n",
+        "\n",
+        "> (3) $\\det(\\mathbf{H}-E \\cdot \\mathbf{S}) = 0$\n",
+        "\n",
+        "Expanding this determinant results in a polynomial of degree $M$ in $E$. \n",
+        "To determine the eigenvalues, we have to solve the equation $P(E)=0$. The roots of this polynomial yield the eigenvalues = energies $E_i$ that correspond to the $M$ molecular orbitals. When the values $E_i$ have been determined, they can be substituted back into equation (2) and we can solve for the corresponding eigenvectors $\\mathbf{C}$. Note that we also have to ensure that the eigenvectors $\\mathbf{C}$ are normalized ($\\sum_i c_{i}^{2} = 1$, remember Born interpretation of the wave function/states in QM). This will provide us with the coefficients of the molecular orbitals. Furthermore the coefficients $c_i$ also define the shape of the orbitals and their phases. The final step is then filling up the orbitals with electrons starting with the lowest energy orbital with two electrons per orbital until all electrons are distributed.\n",
+        "\n",
+        "\n",
+        "**Construction of Hückel Matrix**\n",
+        "\n",
+        " \n",
+        "Before solving the eigenvalue Eq. (2) we must determine the entries of all matrices. We make the assumption that the overlap between atomic orbitals located at different sites is 0 (orthogonal) and it is 1 for the overlap of an orbital with itself (normalized). These two conditions are summarized using the Kronecker delta $\\delta_{ij}$\n",
+        "\n",
+        "> (4) $S_{ij} = \\delta_{ij}$\n",
+        "\n",
+        "Note that this is equivalent to defining $\\mathbf{S}$ as a diagonal matrix which is the identity w.r.t. matrix multiplication:\n",
+        "\n",
+        "> (5) $\\mathbf{S} =  {\\begin{pmatrix}1&0&\\cdots\\\\0&1&\\cdots\\\\ \\cdots&\\cdots&\\cdots\\end{pmatrix}} = \\mathbf{id}$\n",
+        "\n",
+        "\n",
+        "Furthermore, we need to make additional assumptions about the entries of the Hamiltonian matrix, for simplicity we assume only two types of interactions:\n",
+        "\n",
+        "\n",
+        "\n",
+        "*  Diagonal entries $\\mathbf{H}_{ii}$ represent the interaction of an orbital with itself or in other words it is the local (*on-site*) energy contribution of an orbital at site $i$. These contributions are called Coulomb integrals and in the framework of Hueckel theory they are the same as the energy of an electron in a p-orbital and we label this energy value with $\\alpha$\n",
+        "\n",
+        "*  Off Diagonal entries $\\mathbf{H}_{ij}$ of the Hamiltonian Matrix which are also called resonance integrals, and they represent the strength of the $\\pi$-bonding between the orbitals which we shall label $\\beta$. In our simple model we consider only interaction between adjacent carbon atoms, otherwise we set $\\mathbf{H}_{ij}=0$.\n",
+        "\n",
+        "\n",
+        "\n",
+        "Considering these rules we find the following \"Hueckel\" matrix for 1,3 Butadiene:\n",
+        "\n",
+        "> (6) $\\mathbf{H} =  {\\begin{pmatrix}\\alpha&\\beta&0&0\\\\\\beta&\\alpha&\\beta&0 \\\\0 &\\beta &\\alpha& \\beta \\\\ 0&0&\\beta&\\alpha\\end{pmatrix}} $\n",
+        "\n",
+        "Having defined the entries of the matrices $\\mathbf{H}$ and $\\mathbf{S}$, we continue as described above and calculate the energies and corresponding molecular orbitals.\n",
+        "\n",
+        "Note that we did not assign values to $\\alpha$ and $\\beta$ yet. To get a qualitative understanding of the states of the system it is not necessary to know these values. However, estimations for $\\alpha$ and $\\beta$ can be obtained from spectroscopy experiments or more advanced *ab-initio* calculations such as DFT."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "KTcvmYHE5VKv",
+        "colab_type": "text"
+      },
+      "source": [
+        "**EXAMPLE EXERCISE 1.1) Ethene**\n",
+        "\n",
+        "Before you proceed with the programming exercise, make sure that you can solve the problem with pen and paper, then follow these steps:\n",
+        " \n",
+        " \n",
+        "1.  What is the number of Carbon atoms in the system?\n",
+        "\n",
+        "2.  Write down the $\\mathbf{H}$ and $\\mathbf{S}$ matrices\n",
+        "\n",
+        "3.  Write down the secular determinant\n",
+        "\n",
+        "4.  Use the following simplification: Divide the secular determinant by $\\beta$ and replace $\\frac{(\\alpha-E)}{\\beta}$ by $x$. This makes life easier since we now have a simple polynomial in $x$\n",
+        "\n",
+        "5.  Solve the determinant for $x$ and calculate the energy levels\n",
+        "\n",
+        "6.  Draw an energy diagram that shows the relative energy of each molecular orbital in comparison to the original atomic orbitals with respect to $\\alpha$ and $\\beta$. What happens if you increase $\\beta$ or if $\\beta \\rightarrow 0$?\n",
+        "\n",
+        "7. Fill the orbitals with electrons, which orbital is the HOMO which LUMO and what is the adsorption energy of the system?\n",
+        "\n",
+        "8. Compute the orbital coefficients for each energy level, by substituting the obtained energy values into equation (2) and using the normalization requirement of each molecular orbital. Why do we need to normalize the solution and how do the orbitals look like?\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "xxWXNgjOSSf3",
+        "colab_type": "text"
+      },
+      "source": [
+        "**EXAMPLE SOLUTION 1.1) Ethene**\n",
+        "### Ethene pen and paper solution for Eigenvalues\n",
+        "\n",
+        "Since the overlap matrix $\\textbf{S}$ is the identity matrix in the Hückel model, we can rewrite (2) as an eigenvalue problem:\n",
+        "\n",
+        "> (7) $\\textbf{H} \\textbf{C} = E \\textbf{C}$\n",
+        "\n",
+        "which become for ethene:\n",
+        "\n",
+        "> (8) $ \\begin{pmatrix}\n",
+        "  \\alpha & \\beta \\\\\n",
+        "  \\beta  & \\alpha\n",
+        " \\end{pmatrix} \\textbf{C} = E \\textbf{C}$\n",
+        "\n",
+        "From this, we can obtain the energy levels as the eigenvalues of $\\textbf{H}$, and the coefficients of each molecular orbital from the corresponding eigenvectors. (Note: the equation in Eq. (2) can also be rewritten as an eigenvalue problem in the general case, but it is somewhat more complicated to do if $\\textbf{S}$ is not equal to the identity. This is often done in the derivation of the Hartree-Fock equations for computational ab-initio calculations). We can simplify this system of equations by dividing by beta and replacing $(E-\\alpha)/\\beta$ by $x$ in Eq. (2):\n",
+        "\n",
+        "> (9) $\\begin{pmatrix}\n",
+        "  (\\alpha-E)/\\beta & 1 \\\\\n",
+        "  1                & (\\alpha-E)/\\beta\n",
+        " \\end{pmatrix} \\textbf{C} \n",
+        " = \\begin{pmatrix} -x & 1 \\\\ 1  & -x \\end{pmatrix} \\textbf{C} = 0 $,\n",
+        "\n",
+        "which can again be rewritten as an eigenvalue problem:\n",
+        "\n",
+        "> (10) $ \\begin{pmatrix}\n",
+        "  0 & 1 \\\\\n",
+        "  1 & 0\n",
+        " \\end{pmatrix} \\textbf{C} = \\textbf{M} \\textbf{C} = x~\\textbf{C} $\n",
+        "\n",
+        "We can obtain $x_i$ by finding the eigenvalues of the matrix $\\textbf{M}$ on the left hand side, and from these we finally obtain the energy levels of the molecule as follows:\n",
+        "\n",
+        "> (11) $E_i=\\alpha + \\beta x_i$\n",
+        "\n",
+        "The eigenvectors of the matrix $\\mathbf{M}$ still give us the coefficients $\\mathbf{C}$ for each molecular orbital, but with this little trick we can use numerical values only in the matrices which makes the problem much easier to solve for a computer."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "eQjfffXvSMz4",
+        "colab_type": "text"
+      },
+      "source": [
+        "**EXAMPLE EXERCISE 1.2) Ethene Solving Hückel with Numpy**\n",
+        "\n",
+        "\n",
+        "As you will see, solving Hückel problems for bigger systems by hand can turn into a tedious problem. Luckily, we can easily turn the Hückel matrices into an eigenvalue/eigenvector problem, and use numerical libraries to solve the problem for us. Using numpy, it is trivial to obtain the corresponding eigenvalues and eigenvectors. Compute the eigenvalues and eigenvectors of $\\mathbf{M}$ using numpy libraries. More specifically use the function from `numpy.linalg.eigh` and execute the following cell before starting with the exercise. It will import the necessary numpy functions, where t `numpy.linalg.eigh` is the function that we will use to compute eigenvalues and eigenvectors:\n",
+        "\n",
+        "```\n",
+        "x, c = eigh(M) # x contains the x values, see cell above, c eigenvectors (normalized?)\n",
+        "```\n",
+        "\n",
+        "What are the eigenvalues and eigenvectors of the $\\mathbf{M}$ matrix for ethene `M_eth`? In which order are the energies returned by the numpy function, increasing or decreasing order ($\\beta < 0$)? Are the results the same as we obtained by hand?\n",
+        "Note that you must read the eigenvectors columnwise of the matrix c_eth, not across the rows. "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "sT2O7-aLXwIu",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "import numpy as np\n",
+        "from numpy.linalg import eigh\n",
+        "\n",
+        "\"\"\"\n",
+        " The following line changes numpy's default output to make numbers look better\n",
+        " for example, very small numbers (1E-20) that are actually zero are shown as zero\n",
+        "\"\"\"\n",
+        "np.set_printoptions(precision=10, suppress=True)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "FKa0jOrZUJ0i",
+        "colab_type": "text"
+      },
+      "source": [
+        "Your Code comes here:\n",
+        "\n",
+        "(You get solution as an example below for free but you are also welcome to try it yourself first!)"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "dOiJNLbRUNul",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "## Your solution "
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "jZd8TBB2UPvU",
+        "colab_type": "text"
+      },
+      "source": [
+        "**EXAMPLE SOLUTION 1.2) Ethene Solving Hückel with Numpy**\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "SaOOSy86Xxsd",
+        "colab_type": "code",
+        "outputId": "778a0f04-5097-4ec5-8ce8-c92d6b371179",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 105
+        }
+      },
+      "source": [
+        "# set up the matrix\n",
+        "M_eth = np.array([[0, 1],\n",
+        "                  [1, 0]])\n",
+        "# calculate relevant values\n",
+        "x_eth, c_eth = eigh(M_eth)\n",
+        "# Print the x eigenvalues\n",
+        "print(\"eigenvalues\")\n",
+        "print(x_eth)\n",
+        "# Print the eigenvectors\n",
+        "print(\"eigenvectors\")\n",
+        "print(c_eth)"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "eigenvalues\n",
+            "[-1.  1.]\n",
+            "eigenvectors\n",
+            "[[-0.7071067812  0.7071067812]\n",
+            " [ 0.7071067812  0.7071067812]]\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "tdNj1bn1UjmW",
+        "colab_type": "text"
+      },
+      "source": [
+        "**EXAMPLE EXERCISE 1.3) Ethene: Reshape an array**\n",
+        "\n",
+        "Reshape the eigenvectors as columns.\n",
+        "To get the eigenvectors as columns you can do the following:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cEY81p-HCSzk",
+        "colab_type": "code",
+        "outputId": "2b31795a-6cac-4896-cec9-3c470342af89",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 70
+        }
+      },
+      "source": [
+        "# get single columns\n",
+        "c_eth_1=c_eth[:, 0]\n",
+        "c_eth_2=c_eth[:, 1]\n",
+        "print(c_eth_1, c_eth_2)\n",
+        "\n",
+        "# get all coefficients as rows instead of columns\n",
+        "print(c_eth.transpose())"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "[-0.7071067812  0.7071067812] [0.7071067812 0.7071067812]\n",
+            "[[-0.7071067812  0.7071067812]\n",
+            " [ 0.7071067812  0.7071067812]]\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "_VmwCOETSKoc",
+        "colab_type": "text"
+      },
+      "source": [
+        "Note that this did not change anything since the coefficient matrix for ethene is symmetric. If you want the reverse order for the energy eigenvalues of eigenvectors, so that they are in the order of increasing energy, you can do the following:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "GnUy1Ev9S1di",
+        "colab_type": "code",
+        "outputId": "12d20912-94e7-4754-f80a-539aa0179837",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 70
+        }
+      },
+      "source": [
+        "xflip=np.flip(x_eth, 0)\n",
+        "cflip=np.flip(c_eth, 1)\n",
+        "print(xflip)\n",
+        "print(cflip)"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "[ 1. -1.]\n",
+            "[[ 0.7071067812 -0.7071067812]\n",
+            " [ 0.7071067812  0.7071067812]]\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ZCE5kxze98Rn",
+        "colab_type": "text"
+      },
+      "source": [
+        "## FROM HERE ON YOU NEED TO WRITE YOUR OWN CODE BUT YOU CAN USE THE PROVIDED EXAMPLE FOR ETHENE, MOST OF THE FOLLOWING EXERCISES ARE ANALOGOUS"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "BxnyxVV5S5qU",
+        "colab_type": "text"
+      },
+      "source": [
+        "**EXERCISE 1.4) EIGENVALUES AND VECTORS WITH NUMPY BUTADIEN**\n",
+        "\n",
+        "Calculate the energy levels and molecular orbitals for butadiene. Note that you can proceed just like we did for Ethylene: What is the number the carbon atoms/ Write down the secular determinant, transform it into the matrix $\\mathbf{M}$.\n",
+        "How is this matrix constructed? Finally use numpy as before to obtain the eigenvalues and eigenvectors."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "_TkaT44xfAAF",
+        "colab_type": "text"
+      },
+      "source": [
+        "Your Code comes here:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "6HOFnyPNWxqR",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "##Your code comes here..."
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "KSjHABHeW12Z",
+        "colab_type": "text"
+      },
+      "source": [
+        "**SOLUTION 1.4) EIGENVALUES AND VECTORS WITH NUMPY BUTADIEN**"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "EivywOczk8pj",
+        "colab_type": "code",
+        "outputId": "3eb4e69c-6881-4968-c20a-831e50519f5d",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 760
+        }
+      },
+      "source": [
+        "# set up the matrix\n",
+        "M_bd = np.array([[0, 1, 0, 0],\n",
+        "                 [1, 0, 1, 0],\n",
+        "                 [0, 1, 0, 1],\n",
+        "                 [0, 0, 1, 0]])\n",
+        "\n",
+        "# the _bd stands for butadiene, and it is there to avoid overwriting the results from the ethene calculations\n",
+        "# calculate relevant values\n",
+        "\n",
+        "x_bd, c_bd=eigh(M_bd)\n",
+        "print(x_bd)\n",
+        "print(c_bd)\n",
+        "print (np.linalg.det(c_bd))\n",
+        "\n",
+        "# Visualize the matrix\n",
+        "import matplotlib.pyplot as plt\n",
+        "plt.imshow(M_bd)\n",
+        "plt.xlabel(\"Columns\", fontsize= 15)\n",
+        "plt.ylabel(\"Rows\",    fontsize= 15)\n",
+        "# Orthonormal basis\n",
+        "print(\"\")\n",
+        "print(\"Orthonormal basis\")\n",
+        "print(np.dot(c_bd.transpose(), c_bd))\n",
+        "\n",
+        "# Diagonalizing M\n",
+        "print(\"\")\n",
+        "print(\"Diagonalize M\")\n",
+        "print(np.dot(c_bd.transpose(), np.dot(M_bd, c_bd)))\n",
+        "print(\"Note that this is the same as\")\n",
+        "print(np.dot(np.linalg.inv(c_bd), np.dot(M_bd, c_bd)))\n",
+        "print(\"The Reason is that c_bd is an othorgonal matrix\")\n",
+        "print(r\"Q^T \\cdot Q = Id\")\n",
+        "\n",
+        "\n",
+        "print(\"Determinant of Coefficient Matrix C (question in the exersicse)\")\n",
+        "\n",
+        "print (np.linalg.det(c_bd))"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "[-1.61803399 -0.61803399  0.61803399  1.61803399]\n",
+            "[[ 0.37174803 -0.60150096 -0.60150096  0.37174803]\n",
+            " [-0.60150096  0.37174803 -0.37174803  0.60150096]\n",
+            " [ 0.60150096  0.37174803  0.37174803  0.60150096]\n",
+            " [-0.37174803 -0.60150096  0.60150096  0.37174803]]\n",
+            "0.9999999999999991\n",
+            "\n",
+            "Orthonormal basis\n",
+            "[[ 1.00000000e+00  5.47379325e-17  4.34897043e-17  3.79676278e-17]\n",
+            " [ 5.47379325e-17  1.00000000e+00  6.40177724e-17  1.45185532e-16]\n",
+            " [ 4.34897043e-17  6.40177724e-17  1.00000000e+00 -2.71168744e-16]\n",
+            " [ 3.79676278e-17  1.45185532e-16 -2.71168744e-16  1.00000000e+00]]\n",
+            "\n",
+            "Diagonalize M\n",
+            "[[-1.61803399e+00 -7.23325933e-17  2.67131647e-16  2.92567803e-16]\n",
+            " [-1.13784551e-16 -6.18033989e-01  8.40399456e-17  3.08600117e-16]\n",
+            " [ 2.58613463e-16  1.12191478e-16  6.18033989e-01 -1.08260054e-16]\n",
+            " [ 2.41948364e-16  2.73741037e-16 -9.34787790e-17  1.61803399e+00]]\n",
+            "Note that this is the same as\n",
+            "[[-1.61803399e+00 -1.68214421e-17  2.11620496e-16  2.92567803e-16]\n",
+            " [-3.59544601e-18 -6.18033989e-01  7.19673613e-17  2.52255768e-16]\n",
+            " [ 5.25733547e-16  1.66258467e-16  6.18033989e-01  1.58860030e-16]\n",
+            " [ 2.81389408e-16  3.62683015e-16  7.87299262e-17  1.61803399e+00]]\n",
+            "The Reason is that c_bd is an othorgonal matrix\n",
+            "Q^T \\cdot Q = Id\n",
+            "Determinant of Coefficient Matrix C (question in the exersicse)\n",
+            "0.9999999999999991\n"
+          ],
+          "name": "stdout"
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "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\n",
+            "text/plain": [
+              "<Figure size 432x288 with 1 Axes>"
+            ]
+          },
+          "metadata": {
+            "tags": [],
+            "needs_background": "light"
+          }
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "W5Y3-B-4qdLW",
+        "colab_type": "text"
+      },
+      "source": [
+        "**EXERCISE 1.5) Energy Diagrams of BUTADIEN**\n",
+        "\n",
+        "Draw the energy diagrams, shape of the orbitals. Identify the HOMO and LUMO!\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ziDFjB0dXHvm",
+        "colab_type": "text"
+      },
+      "source": [
+        "**USEFUL HINTS:** "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "TWKN0qnnqvuV",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# what will the next bit of code do? is it matrix multiplication?\n",
+        "sq_c = c_bd*c_bd\n",
+        "norm = \tnp.sum(sq_c, axis=0)\n",
+        "print(norm)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ga6LlQTLqydv",
+        "colab_type": "text"
+      },
+      "source": [
+        "Here each element $ij$ of the matrix c_bd is multiplied with the same element ij of the matrix c_bd. It is therefore not the same as matrix multiplication.\n",
+        "By computing the sum across the columns we show that the 4 states are normalized."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "6fozbH-Nu7E5",
+        "colab_type": "text"
+      },
+      "source": [
+        "What is the energy difference between HOMO and LUMO and how does it compare to ethene? Remember that you can compute such energy differences in units of $\\beta$ obtained from the previous calculation using:\n",
+        " \n",
+        "> (11) $E_i = \\alpha + \\beta x_i$\n",
+        " \n",
+        "Which leads to the following expression for the HOMO-LUMO energy difference:\n",
+        " \n",
+        "> $\\Delta E(\\textrm{HOMO-LUMO})=(\\alpha + \\beta x_\\textrm{LUMO})-(\\alpha + \\beta x_\\textrm{HOMO})=\\beta (x_\\textrm{LUMO}-x_\\textrm{HOMO})$\n",
+        " \n",
+        "This means that the energy difference between HOMO-LUMO does not depend on the energy of the atomic orbital but only on the energy $\\beta$ which can be interpreted as the interaction energy between different atomic orbitals. This makes sense since in the limit case $\\beta \\rightarrow 0$ we must have $\\Delta E(\\textrm{HOMO-LUMO}) = 0$ since then the atomic orbitals are decoupled.\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "tVcvCD2ufJDM",
+        "colab_type": "text"
+      },
+      "source": [
+        "Your Code comes here:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "GuFfdul-fJ_b",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "## Your code comes here\n",
+        "#complete the following code to obtain the relevant values\n",
+        "dE_HOMO_LUMO_ethene =\n",
+        "dE_HOMO_LUMO_bdene  = "
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "W7O-yeVl3IOz",
+        "colab_type": "code",
+        "outputId": "bf7c9589-ca71-4c12-f089-61132dfdb9a0",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 35
+        }
+      },
+      "source": [
+        "#complete the following code to obtain the relevant values\n",
+        "dE_HOMO_LUMO_ethene = x_eth[0]-x_eth[1]\n",
+        "dE_HOMO_LUMO_bdene  = x_bd[1] -x_bd[2]\n",
+        "print(\"Adsoption Energy Ethene:\", dE_HOMO_LUMO_ethene, \" beta, Butadiene:\", dE_HOMO_LUMO_bdene, \" beta\")"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Adsoption Energy Ethene: -2.0  beta, Butadiene: -1.2360679774997898  beta\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "We01HW4P3Z1S",
+        "colab_type": "text"
+      },
+      "source": [
+        "**Some Linear Algebra**\n",
+        "\n",
+        "The eigenvectors of a matrix have some special properties, most importantly they diagonalize the original matrix such that the matrix in the \"eigenbasis\" corresponds to a stretching operation along each of the eigenvectors. If the matrix such as the Hamiltonian $\\mathbf{H}$ is symmetric then the eigenvectors are orthogonal and since we also require them to be orthonormal ($\\mathbf{C}^T \\mathbf{C}= \\mathbf{id}$) we can compute the inverse by transposing the matrix which contains the eigenvectors."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "ECr7UP39CgHu",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# Orthonormal basis\n",
+        "print(\"Orthonormal basis\")\n",
+        "print(np.dot(c_eth.transpose(), c_eth))\n",
+        "\n",
+        "# Diagonalizing M\n",
+        "print(\"\")\n",
+        "print(\"Diagonalize M\")\n",
+        "print(np.dot(c_eth.transpose(), np.dot(M_eth, c_eth)))"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "rdpBzK0zDOfl",
+        "colab_type": "text"
+      },
+      "source": [
+        "**Benzene** \n",
+        "**EXERCISE 1.6)  EIGENVALUES AND VECTORS WITH NUMPY Benzene**\n",
+        "\n",
+        "Repeat the complete procedure for benzene. Count the number of carbon atoms, construct the matrix $\\mathbf{M}$. What is different compared to the previous molecules? How do the energy levels look now? Are there degenerate states = states that correspond to the same eigenvalue? Show once more that the obtained eigenvectors are orthonormal and that they diagonalize M.\n",
+        "\n",
+        "**Hint**: Make sure that you consider all neighbours of the carbon atoms!\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "RPxwD3qzfB6q",
+        "colab_type": "text"
+      },
+      "source": [
+        "Your Code comes here:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "M03Au3pNdxQ_",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "## Your code comes here"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "6lQrXDMgdxcu",
+        "colab_type": "text"
+      },
+      "source": [
+        "**SOLUTION 1.6)  EIGENVALUES BENZENE**"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "MYGTXuhxD4Rp",
+        "colab_type": "code",
+        "outputId": "009fdfdf-e8f7-424c-9139-6906f198f05e",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 563
+        }
+      },
+      "source": [
+        "# set up the matrix\n",
+        "M_bz = np.array([[0, 1, 0, 0, 0, 1],\n",
+        "               [1, 0, 1, 0, 0, 0],\n",
+        "               [0, 1, 0, 1, 0, 0],\n",
+        "               [0, 0, 1, 0, 1, 0],\n",
+        "               [0, 0, 0, 1, 0, 1],\n",
+        "               [1, 0, 0, 0, 1, 0],])\n",
+        "\n",
+        "# Visualize the matrix\n",
+        "plt.xlabel(\"Columns\", fontsize= 15)\n",
+        "plt.ylabel(\"Rows\",    fontsize= 15)\n",
+        "plt.imshow(M_bz)\n",
+        "\n",
+        "# calculate relevant values\n",
+        "x_bz, c_bz = eigh(M_bz)\n",
+        "print (\"Eigenvalues\")\n",
+        "print(x_bz)\n",
+        "print (\"Eigenvectors\")\n",
+        "print(c_bz)\n",
+        "np.linalg.det(c_bz)\n",
+        "np.trace(c_bz)"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Eigenvalues\n",
+            "[-2. -1. -1.  1.  1.  2.]\n",
+            "Eigenvectors\n",
+            "[[-4.08248290e-01  2.25629369e-02  5.76909219e-01  4.81576194e-18\n",
+            "  -5.77350269e-01  4.08248290e-01]\n",
+            " [ 4.08248290e-01 -5.10899508e-01 -2.68914533e-01 -5.00000000e-01\n",
+            "  -2.88675135e-01  4.08248290e-01]\n",
+            " [-4.08248290e-01  4.88336571e-01 -3.07994686e-01 -5.00000000e-01\n",
+            "   2.88675135e-01  4.08248290e-01]\n",
+            " [ 4.08248290e-01  2.25629369e-02  5.76909219e-01  2.32525553e-17\n",
+            "   5.77350269e-01  4.08248290e-01]\n",
+            " [-4.08248290e-01 -5.10899508e-01 -2.68914533e-01  5.00000000e-01\n",
+            "   2.88675135e-01  4.08248290e-01]\n",
+            " [ 4.08248290e-01  4.88336571e-01 -3.07994686e-01  5.00000000e-01\n",
+            "  -2.88675135e-01  4.08248290e-01]]\n"
+          ],
+          "name": "stdout"
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "-0.5302190594807435"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 5
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "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\n",
+            "text/plain": [
+              "<Figure size 432x288 with 1 Axes>"
+            ]
+          },
+          "metadata": {
+            "tags": [],
+            "needs_background": "light"
+          }
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "-LVoFIcXfbjr",
+        "colab_type": "text"
+      },
+      "source": [
+        "## Molecular Orbitals of Infinite Chain and Solids\n",
+        " **EXERCISE 2.1)  Tight binding**\n",
+        "\n",
+        "The electronic states in a solid can be considered as a limit of molecular orbital theory with an infinite number of atoms in a periodic arrangement.\n",
+        "It is a very particular property for solids in contrast to molecules that the electrons do not occupy orbitals and discrete levels of energy but instead form a so-called band structure with a continuous band of possible energy eigenvalues. It is surprisingly simple to apply the Hueckel model to a one dimensional solid which is from the Hueckel point of view the same as an infinite one dimensional chain molecule.\n",
+        "This model is similar to the so-called **tight-binding approximation** in solid state physics. In this model we make the assumption that the solid model may is composed of atomic s-orbitals and that an *s-band* is formed when the number of atomic orbitals goes to infinity $N \\rightarrow \\infty$.\n",
+        "\n",
+        " \n",
+        "(Check the Atkins, Friedmann' *Molecular Quantum Mechanics* Chapter: 8.12 *The tight-binding approximation*)\n",
+        "\n",
+        "\n",
+        "\n",
+        "1.   Write a function that constructs the eigenvalue matrix $\\mathbf{M}$ for any given $N$. Hint: Use the function `np.eye()` and check the numpy manual! \n",
+        "The code `np.eye(N, k=1)` will give you an $N \\times N$ matrix with ones on the positive offdiagonal and zeros elsewhere\n",
+        "\n",
+        "2.   Say $N = 1000$, plot the distribution of eigenvalues using a histrogram and `matplotlib.pyplot`. The result will be the density of states of a one-dimensional solid\n",
+        "\n",
+        "3. Now let $N$ run in a loop from $N = 10$ to $N = 1000$, compute the eigenvalues for each $N$ in intervals of $10$ using `range(10, 1010, 10)`\n",
+        "\n",
+        "4. Plot the difference between any two eigenvalues, say between the first and second eigenvalue `abs(eig_vals[0]-eig_vals[1])`, as a function of $N$. What do you observe?\n",
+        "\n",
+        "\n",
+        "Hint: For $N=4$ you should get the same matrix as previously for Butadiene."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "bBxRUw-xfDNx",
+        "colab_type": "text"
+      },
+      "source": [
+        "Your Code comes here:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "FoniSl5CXjP2",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "## Your code comes here"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ELUd1RZsXn8i",
+        "colab_type": "text"
+      },
+      "source": [
+        " **SOLUTION 2.1)  Tight Binding**"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "grAbYP3tfnyL",
+        "colab_type": "code",
+        "outputId": "ce928dd4-4f01-4338-ab33-4aabf1b56c65",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 1000
+        }
+      },
+      "source": [
+        "import matplotlib.pyplot as plt\n",
+        "import seaborn as sns\n",
+        "import numpy as np\n",
+        "from numpy.linalg import eigh\n",
+        "\n",
+        "\n",
+        "Norbitals = 1000\n",
+        "M = np.eye(Norbitals, k=1) + np.eye(Norbitals, k=-1)\n",
+        "\n",
+        "\n",
+        "eig_vals, C = eigh(M)\n",
+        "\n",
+        "print (\"LAST EIGENVALUE OF M\")\n",
+        "print (eig_vals[-1])\n",
+        "print (\"\")\n",
+        "\n",
+        "print (\"TRACE OF EIGENVECTOR-MATRIX C\")\n",
+        "print (np.trace(C))\n",
+        "print (\"\")\n",
+        "\n",
+        "plt.figure(\"Distibution of States\")\n",
+        "plt.xlabel(r\"$x$\", fontsize= 15)\n",
+        "plt.ylabel(r\"Count\", fontsize= 15)\n",
+        "plt.hist(eig_vals, bins= 100)\n",
+        "\n",
+        "plt.figure(\"Density of States\")\n",
+        "plt.xlabel(r\"$x$\", fontsize= 15)\n",
+        "plt.ylabel(r\"Normalized Density\", fontsize= 15)\n",
+        "sns.kdeplot(eig_vals, shade=True);\n",
+        "plt.xlim(-2, 2)\n",
+        "\n",
+        "all_diff = []\n",
+        "for i in range(10, 1010, 10):\n",
+        "  M = np.eye(i, k=1) + np.eye(i, k=-1)\n",
+        "  eig_vals, C = eigh(M)\n",
+        "  all_diff.append(abs(eig_vals[0]-eig_vals[1]))\n",
+        "\n",
+        "  if i == 10:\n",
+        "    print (\"AVERAGE LEVEL SEPERATION FOR N={}\".format(int(i)))\n",
+        "    print (np.mean(np.diff(eig_vals)))\n",
+        "    print (\"\")\n",
+        "\n",
+        "  if i == 1000:\n",
+        "    print (\"AVERAGE LEVEL SEPERATION FOR N={}\".format(int(i)))\n",
+        "    print (np.mean(np.diff(eig_vals)))\n",
+        "\n",
+        "plt.figure(\"Level Seperation\")\n",
+        "plt.ylabel(r\"Level Seperation $\\Delta x$\", fontsize= 15)\n",
+        "plt.xlabel(r\"Length of Chain $N$\", fontsize= 15)\n",
+        "plt.yscale('log')\n",
+        "plt.plot(np.arange(10, 1010, 10),all_diff)\n",
+        "\n",
+        "\n",
+        "print (\"\")\n",
+        "print(\"We see that the separation between the levels decreases rapidly as more atomic orbitals are added\")\n",
+        "print(\"Finally it will go to zero for infinitely many atomic orbitals\")"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "/usr/local/lib/python3.6/dist-packages/statsmodels/tools/_testing.py:19: FutureWarning: pandas.util.testing is deprecated. Use the functions in the public API at pandas.testing instead.\n",
+            "  import pandas.util.testing as tm\n"
+          ],
+          "name": "stderr"
+        },
+        {
+          "output_type": "stream",
+          "text": [
+            "LAST EIGENVALUE OF M\n",
+            "1.9999901501133228\n",
+            "\n",
+            "TRACE OF EIGENVECTOR-MATRIX C\n",
+            "-1.9813994402346509\n",
+            "\n",
+            "AVERAGE LEVEL SEPERATION FOR N=10\n",
+            "0.4264413216064433\n",
+            "\n",
+            "AVERAGE LEVEL SEPERATION FOR N=1000\n",
+            "0.004003984284511158\n",
+            "\n",
+            "We see that the separation between the levels decreases rapidly as more atomic orbitals are added\n",
+            "Finally it will go to zero for infinitely many atomic orbitals\n"
+          ],
+          "name": "stdout"
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "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\n",
+            "text/plain": [
+              "<Figure size 432x288 with 1 Axes>"
+            ]
+          },
+          "metadata": {
+            "tags": [],
+            "needs_background": "light"
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "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\n",
+            "text/plain": [
+              "<Figure size 432x288 with 1 Axes>"
+            ]
+          },
+          "metadata": {
+            "tags": [],
+            "needs_background": "light"
+          }
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "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\n",
+            "text/plain": [
+              "<Figure size 432x288 with 1 Axes>"
+            ]
+          },
+          "metadata": {
+            "tags": [],
+            "needs_background": "light"
+          }
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ohN5OpmsWtQ_",
+        "colab_type": "text"
+      },
+      "source": [
+        "**REFERENCES**\n",
+        "\n",
+        "Eigenvalue Theory and Linear Algebra:\n",
+        "\n",
+        "\n",
+        "*   Tutorium Analysis 1 und Lineare Algebra 1 \n",
+        "*   Tutorium Analysis 2 und Lineare Algebra 2 (German)\n",
+        "\n",
+        "Quantum Chemistry:\n",
+        "\n",
+        "*   Atkins' Physical Chemistry\n",
+        "*   Atkins', Friedmann' Molecular Quantum Mechanics"
+      ]
+    }
+  ]
+}
